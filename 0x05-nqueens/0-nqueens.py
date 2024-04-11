@@ -1,47 +1,76 @@
 #!/usr/bin/python3
-'''N queens'''
-from sys import argv
+
+import sys
 
 
-def is_nqueen_safe(cell: list) -> bool:
-    '''Define is_nqueen_safe'''
-    row = len(cell) - 1
-    d = 0
-    for i in range(0, row):
-        d = cell[i] - cell[row]
-        if d < 0:
-            d *= -1
-        if d == 0 or d == row - i:
-            return False
-    return True
+solutions = []
+n = 0
+pos = None
 
 
-def solve_nqueens(dim: int, r: int, cell: list, o: list):
-    '''Define solve_nqueens'''
-    if r == dim:
-        print(o)
+def get_input():
+    global n
+    n = 0
+    if len(sys.argv) != 2:
+        print("Usage: nqueens N")
+        sys.exit(1)
+    try:
+        n = int(sys.argv[1])
+    except Exception:
+        print("N must be a number")
+        sys.exit(1)
+    if n < 4:
+        print("N must be at least 4")
+        sys.exit(1)
+    return n
+
+
+def is_attacking(pos0, pos1):
+    if (pos0[0] == pos1[0]) or (pos0[1] == pos1[1]):
+        return True
+    return abs(pos0[0] - pos1[0]) == abs(pos0[1] - pos1[1])
+
+
+def group_exists(group):
+    global solutions
+    for stn in solutions:
+        i = 0
+        for stn_pos in stn:
+            for grp_pos in group:
+                if stn_pos[0] == grp_pos[0] and stn_pos[1] == grp_pos[1]:
+                    i += 1
+        if i == n:
+            return True
+    return False
+
+
+def build_solution(row, group):
+    global solutions
+    global n
+    if row == n:
+        tmp0 = group.copy()
+        if not group_exists(tmp0):
+            solutions.append(tmp0)
     else:
-        for col in range(0, dim):
-            cell.append(col)
-            o.append([r, col])
-            if (is_nqueen_safe(cell)):
-                solve_nqueens(dim, r + 1, cell, o)
-            cell.pop()
-            o.pop()
+        for col in range(n):
+            a = (row * n) + col
+            matches = zip(list([pos[a]]) * len(group), group)
+            used_positions = map(lambda x: is_attacking(x[0], x[1]), matches)
+            group.append(pos[a].copy())
+            if not any(used_positions):
+                build_solution(row + 1, group)
+            group.pop(len(group) - 1)
 
 
-if len(argv) != 2:
-    print("Usage: nqueens N")
-    exit(1)
-try:
-    N = int(argv[1])
-except BaseException:
-    print('N must be a number')
-    exit(1)
-if N < 4:
-    print("N must be at least 4")
-    exit(1)
-else:
-    o = []
-    cell = 0
-    solve_nqueens(int(N), cell, [], o)
+def get_solutions():
+    global pos, n
+    pos = list(map(lambda x: [x // n, x % n], range(n ** 2)))
+    a = 0
+    group = []
+    build_solution(a, group)
+
+
+n = get_input()
+get_solutions()
+for solution in solutions:
+    print(solution)
